@@ -67,7 +67,8 @@ environment          = "lab"
 
 ```bash
 terraform init
-terraform plan
+terraform validate
+terraform plan --out tfplan --var-file=terraform.tfvars
 terraform apply
 ```
 
