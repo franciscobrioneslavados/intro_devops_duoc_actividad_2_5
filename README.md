@@ -57,9 +57,10 @@ cp terraform.tfvars.example terraform.tfvars
 Editar `terraform.tfvars` con tus valores:
 
 ```hcl
-aws_region           = "us-east-1"
-my_ip                = "TU_IP_PUBLICA/32"    # Ej: 190.45.67.89/32
-ssm_instance_profile = "LabInstanceProfile"  # El perfil IAM de tu lab
+project_name         = "actividad_2_5"
+owner_name           = ""
+environment          = "lab"
+
 ```
 
 #### 1.3 Desplegar
@@ -92,6 +93,9 @@ aws ecr create-repository --repository-name tienda-db --region us-east-1
 
 Anotar las URIs de cada repositorio (formato: `123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-frontend`).
 
+891377192530.dkr.ecr.us-east-1.amazonaws.com/tienda-frontend
+891377192530.dkr.ecr.us-east-1.amazonaws.com/tienda-backend
+891377192530.dkr.ecr.us-east-1.amazonaws.com/tienda-db
 ---
 
 ### PASO 3: Preparar el repositorio en GitHub

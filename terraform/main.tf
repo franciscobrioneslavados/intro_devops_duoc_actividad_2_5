@@ -176,7 +176,7 @@ module "ec2_frontend" {
     #!/bin/bash
     #!/bin/bash
     yum update -y
-    yum install -y docker.io
+    yum install -y docker
     systemctl enable docker && systemctl start docker
     usermod -aG docker ec2-user
     # Instalar SSM Agent (ya viene en Amazon Linux 2)
