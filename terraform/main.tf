@@ -21,12 +21,13 @@ terraform {
       version = "~> 2.4"
     }
   }
-  backend "s3" {
-    bucket  = "placeholder" # Se sobreescribe en el pipeline con -backend-config
-    key     = "actividad_2_5/terraform.tfstate"
-    region  = "us-east-1"
-    encrypt = true
-  }
+  # backend "s3" {
+  #  bucket  = "placeholder" # Se sobreescribe en el pipeline con -backend-config
+  #  key     = "actividad_2_5/terraform.tfstate"
+  #  region  = "us-east-1"
+  #  encrypt = true
+  # }
+
 }
 
 provider "aws" {
@@ -94,7 +95,7 @@ module "nat_instance" {
   environment          = var.environment
   owner_name           = var.owner_name
   instance_type        = var.instance_type
-  ssh_allowed_cidrs    = var.ssh_allowed_cidrs
+  ssh_allowed_cidrs    = ["0.0.0.0/32"]
   os_type              = "amazon-linux-2" # or "ubuntu"
 
   depends_on = [module.vpc]
@@ -149,28 +150,13 @@ module "sg_db" {
 
   ingress_rules = [
     {
-      from_port = 3306
-      to_port   = 3306
-      protocol  = "tcp"
+      from_port   = 3306
+      to_port     = 3306
+      protocol    = "tcp"
       cidr_blocks = module.vpc.private_subnets_cidr_blocks
       description = "MySQL desde subnet privada (backend)"
     },
   ]
-}
-
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
 }
 
 ###############################################################################
@@ -180,16 +166,17 @@ module "ec2_frontend" {
   source = "./modules/ec2"
 
   name                 = "${local.name_prefix}-frontend"
-  ami_id               = data.aws_ami.ubuntu.id
+  ami_id               = "ami-0a59ec92177ec3fad"
   instance_type        = var.instance_type
   subnet_id            = module.vpc.public_subnets[0]
-  security_group_ids   = [module.frontend_sg.security_group_id]
+  security_group_ids   = [module.sg_frontend.security_group_id]
   iam_instance_profile = var.iam_instance_profile
 
   user_data = <<-EOF
     #!/bin/bash
+    #!/bin/bash
     yum update -y
-    yum install -y docker
+    yum install -y docker.io
     systemctl enable docker && systemctl start docker
     usermod -aG docker ec2-user
     # Instalar SSM Agent (ya viene en Amazon Linux 2)
@@ -197,17 +184,17 @@ module "ec2_frontend" {
   EOF
 
   tags       = { Layer = "frontend" }
-  depends_on = [module.backend_host]
+  depends_on = [module.ec2_backend]
 }
 
 module "ec2_backend" {
   source = "./modules/ec2"
 
   name                 = "${local.name_prefix}-backend"
-  ami_id               = data.aws_ami.ubuntu.id
+  ami_id               = "ami-0a59ec92177ec3fad"
   instance_type        = var.instance_type
   subnet_id            = module.vpc.private_subnets[1]
-  security_group_ids   = [module.backend_sg.security_group_id]
+  security_group_ids   = [module.sg_backend.security_group_id]
   iam_instance_profile = var.iam_instance_profile
 
   user_data = <<-EOF
@@ -220,17 +207,17 @@ module "ec2_backend" {
   EOF
 
   tags       = { Layer = "backend" }
-  depends_on = [module.db_host]
+  depends_on = [module.ec2_db]
 }
 
 module "ec2_db" {
   source = "./modules/ec2"
 
   name                 = "${local.name_prefix}-db"
-  ami_id               = data.aws_ami.ubuntu.id
+  ami_id               = "ami-0a59ec92177ec3fad"
   instance_type        = var.instance_type
   subnet_id            = module.vpc.private_subnets[0]
-  security_group_ids   = [module.db_sg.security_group_id]
+  security_group_ids   = [module.sg_db.security_group_id]
   iam_instance_profile = var.iam_instance_profile
 
   user_data = <<-EOF

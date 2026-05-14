@@ -82,3 +82,8 @@ temp/
 *.bak
 *.orig
 *.rej
+
+terraform/.terraform.lock.hcl
+terraform/.terraform.tfstate.lock.info
+terraform/terraform.tfvars
+terraform/tfplan
